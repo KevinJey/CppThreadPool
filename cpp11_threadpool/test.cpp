@@ -8,9 +8,11 @@ void mytask(int i) {
 }
 
 int main() {
-    ThreadPool threadpool(20);
+    
+    ThreadPool threadpool(20); // threadpool capacity is 20
+    // 开了一百个线程在这里
     for (int i = 0; i < 100; ++i) {
-        threadpool.enqueue(mytask, i);
+        threadpool.enqueue(mytask, i); // task and his args
     }
     return 0;
 }

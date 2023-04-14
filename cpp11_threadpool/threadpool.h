@@ -17,7 +17,7 @@ class ThreadPool {
     explicit ThreadPool(size_t);
     template<typename F, typename... Args>
     auto enqueue(F&& f, Args&&... args)
-        -> std::future<typename std::result_of<F(Args...)>::type>;
+        -> std::future<typename std::result_of<F(Args...)>::type>;  // i thin future is the type of ret
     ~ThreadPool();
 
  private:
@@ -32,7 +32,7 @@ class ThreadPool {
     bool stop_;
 };
 
-// the constructor just launches some amount of workers
+// the constructor just launches some amount of workers // input the capacity of threadpool
 inline ThreadPool::ThreadPool(size_t threads) : stop_(false) {
     for (size_t i = 0; i < threads; ++i) {
         workers_.emplace_back(
@@ -61,11 +61,12 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
     -> std::future<typename std::result_of<F(Args...)>::type> {
     using return_type = typename std::result_of<F(Args...)>::type;
 
+    // this is a internal function package_task, i think this is specially provided for the task conception of thread
     auto task = std::make_shared< std::packaged_task<return_type()>> (
             std::bind(std::forward<F>(f), std::forward<Args>(args)...));
     std::future<return_type> res = task->get_future();
     {
-        std::unique_lock<std::mutex> lock(queue_mutex_);
+        std::unique_lock<std::mutex> lock(queue_mutex_);        //RTII it will be destoried when quit
 
         // don't allow enqueueing after stopping the pool
         if (stop_) {
@@ -86,7 +87,7 @@ inline ThreadPool::~ThreadPool() {
     }
     condition_.notify_all();
     for (std::thread &worker : workers_) {
-        worker.join();
+        worker.join();      // release all threads
     }
 }
 
